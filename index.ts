@@ -1,7 +1,9 @@
 import express, { Express, Request, Response } from 'express';
 import { IncrementalMerkleTree } from 'merkletreejs';
+import * as fs from 'fs';
 
 const { buildPoseidon } = require('circomlibjs')
+const FILE_NAME = "registered_users";
 
 class Regulator {
     public server: Express;
@@ -27,8 +29,7 @@ class Regulator {
         return bn
     }
 
-    public registerUser(name: string, pid: number, pub_x: number, pub_y: number) {
-
+    private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
         // calculating hash of name
         let name_number: string = "";
         for (let i = 0; i < name.length; i++) {
@@ -37,12 +38,20 @@ class Regulator {
         const name_hash = this.poseidon([name_number]);
 
         // calculating user hash
-        const user_hash = this.poseidon([name_hash, pid, pub_x, pub_y]);
+        return this.poseidon([name_hash, pid, pub_x, pub_y]);
+    }
 
-        console.log("User hash is: ", user_hash.toString(16));
+    public registerUser(name: string, pid: number, pub_x: number, pub_y: number) {
+        const user_hash = this.generateUserHash(name, pid, pub_x, pub_y);
 
-        if (this.tree !== undefined)
+        if (this.tree !== undefined) {
             this.tree.insert(user_hash);
+
+            // write user into file
+            fs.appendFileSync(FILE_NAME, name + " " + pid + 
+                " " + this.tree.indexOf(user_hash).toString() + '\n');
+        }
+
     }
 }
 
