@@ -1,0 +1,50 @@
+\\\\\\\\\\\\\\\\\\\\\\\\\\
+Duplicate test
+
+
+const regulator = new Regulator();
+
+// Unesi broj koji želiš da proveriš
+const pidToCheck = 1234567891234;
+
+const result = regulator.checkDuplicate(pidToCheck);
+console.log(result); 
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+MerkleTree test
+
+
+async function testing() {
+    const regulator = new Regulator();
+    await regulator.init();
+    return regulator;
+}
+
+testing().then((res) => {
+    const name = "Nikola";
+    const name2 = "Niole";
+    const name3 = "Nikle";
+    const name4 = "Nikoe";
+    const name5 = "Nikol";
+
+    const pid = 1234567891238;
+    const pid2 = 1234567891234;
+    const pid3 = 1234567891235;
+    const pid4 = 1234567891236;
+    const pid5 = 1234567891237;
+
+
+
+    const pub_x = 7849177681360672621257726786949079749092629607596162839195961972852243798377;
+    const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291788;
+
+    res.registerUser(name, pid, pub_x, pub_y);
+    res.registerUser(name2, pid2, pub_x, pub_y);
+    res.registerUser(name3, pid3, pub_x, pub_y);
+    res.registerUser(name4, pid4, pub_x, pub_y);
+    res.registerUser(name5, pid5, pub_x, pub_y);
+
+
+    // Print Merkle Tree if the library provides a method to inspect it
+    console.log('Merkle Tree:', res.tree);
+});
