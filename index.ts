@@ -25,9 +25,17 @@ class Regulator {
         });
     }
 
+<<<<<<< HEAD
     public poseidon(inputs: any) {
         const bigIntInputs = inputs.map(IncrementalMerkleTree.bigNumberify);
         console.log("Converted input ", bigIntInputs);
+=======
+    /*
+    *   Function expects inputs to be hexadecimal strings
+    */
+    public poseidon(inputs: any[]): bigint {
+        const bigIntInputs = inputs.map(input => BigInt('0x' + input));
+>>>>>>> 5c40d2e (added comments)
         const hash = this._poseidon(bigIntInputs);
         const bn = IncrementalMerkleTree.bigNumberify(this._poseidon.F.toString(hash))
         return bn
