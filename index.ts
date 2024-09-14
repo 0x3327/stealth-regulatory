@@ -43,7 +43,7 @@ class Regulator {
 
     public registerUser(name: string, pid: number, pub_x: number, pub_y: number) {
         const user_hash = this.generateUserHash(name, pid, pub_x, pub_y);
-
+        console.log(`Hash of ${name} is `, user_hash);
         if (this.tree !== undefined) {
             this.tree.insert(user_hash);
 
@@ -68,6 +68,28 @@ testing().then((res) => {
     const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291770;
 
     res.registerUser(name, pid, pub_x, pub_y);
+    res.registerUser("Pavle", 2345678912345, 8729176218460562548973127896482079481359769801452716493125971962853443910295, 9328416529780431261879424985573099310275416289943765812297619982154127390826);
 
     IncrementalMerkleTree.print(res.tree);
+
+    if (res.tree !== undefined) {
+        console.log()
+        console.log(res.tree.getProof(0));
+
+        console.log("------ Testing Merkle Proof -------");
+
+        const hash1: number = 20614815389456477269622376490749609717305042994180078292278868320083221227436;
+        const hash2: number = 1749231721186905000331905189205193995387117199992888763390662983390862412761
+
+        const concat_hash: string = hash1.toString() + hash2.toString();
+
+        const parent_hash = res.poseidon([hash2, hash1]);
+        const sibling_hash = 14744269619966411208579211824598458697587494354926760081771325075741142829156;
+
+        console.log("Root is", res.poseidon([
+            parent_hash,
+            sibling_hash
+        ]));
+        console.log("True root is", res.tree.getRoot());
+    }
 });
