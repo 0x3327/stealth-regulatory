@@ -19,24 +19,32 @@ class Regulator {
     public async init() {
         this._poseidon = await buildPoseidon();
         this.tree = new IncrementalMerkleTree(this.poseidon.bind(this), {
-            depth: 3,
+            depth: 2,
             arity: 2,
             zeroValue: BigInt(0)
         });
     }
 
-    public poseidon(inputs: any[]): bigint {
-        const bigIntInputs = inputs.map(input => BigInt('0x' + input));
+    public poseidon(inputs: any) {
+        const bigIntInputs = inputs.map(IncrementalMerkleTree.bigNumberify);
+        console.log("Converted input ", bigIntInputs);
         const hash = this._poseidon(bigIntInputs);
-        return BigInt(this._poseidon.F.toString(hash));
+        const bn = IncrementalMerkleTree.bigNumberify(this._poseidon.F.toString(hash))
+        return bn
     }
 
-    private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number): bigint {
-        const nameHex = Buffer.from(name, 'utf-8').toString('hex');
-        const nameHash = this.poseidon([nameHex]);
+    private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
+        // calculating hash of name
+        let name_number: string = "";
+        for (let i = 0; i < name.length; i++) {
+            name_number += name.charCodeAt(i).toString();
+        }
+        const name_hash = this.poseidon([name_number]);
 
-        return this.poseidon([nameHash.toString(16), pid.toString(16), pub_x.toString(16), pub_y.toString(16)]);
+        // calculating user hash
+        return this.poseidon([name_hash, pid, pub_x, pub_y]);
     }
+
 
     public registerUser(name: string, pid: number, pub_x: number, pub_y: number): void {
         const userHash = this.generateUserHash(name, pid, pub_x, pub_y);
@@ -79,42 +87,55 @@ class Regulator {
 
 
 async function testing() {
-    const regulator = new Regulator();
+    const regulator: Regulator = new Regulator();
     await regulator.init();
     return regulator;
 }
 
 testing().then((res) => {
     const name = "Nikola";
-    const name2 = "Niole";
-    const name3 = "Nikle";
-    const name4 = "Nikoe";
-    const name5 = "Nikol";
-
-    const pid = 1234567891238;
-    const pid2 = 1234567891234;
-    const pid3 = 1234567891235;
-    const pid4 = 1234567891236;
-    const pid5 = 1234567891237;
-
-    const pidToCheck = 1234567891230;
-
-    let sk = PrivateKey.getRandObj().field;
-    //get PrivateKey object from field(or hexstring)
-    let privKey = new PrivateKey(sk);
-    //get PublicKey object from privateKey object
-    let pubKey = PublicKey.fromPrivate(privKey);
-
-    const pub_x = 5299619240641551281634865583518297030282874472190772894086521144482721001553;
-    const pub_y = 16950150798460657717958625567821834550301663161624707787222815936182638968203;
+    const pid = 1234567891234;
+    const pub_x = 7849177681360672621257726786949079749092629607596162839195961972852243798387;
+    const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291770;
 
     res.registerUser(name, pid, pub_x, pub_y);
-    res.registerUser(name2, pid2, pub_x, pub_y);
-    res.registerUser(name3, pid3, pub_x, pub_y);
-    res.registerUser(name4, pid4, pub_x, pub_y);
-    res.registerUser(name5, pid5, pub_x, pub_y);
- 
+    res.registerUser("Pavle", 2345678912345, 8729176218460562548973127896482079481359769801452716493125971962853443910295, 9328416529780431261879424985573099310275416289943765812297619982154127390826);
+
+    IncrementalMerkleTree.print(res.tree);
+
+    if (res.tree !== undefined) {
+        console.log();
+        console.log(res.tree.getProof(0));  // Merkle proof for the first leaf
+    
+        console.log("------ Testing Merkle Proof -------");
+    
+        const hash1 = "3de07b2978ff113f7b853ea9590475e53320dbb731150264142a3f4618e8bd9";
+        const hash2 = "2d93927060ea68025d8cc1bf545522eccd3dc36036b3c4b903b21e4842d527ac";
+
+        const hash1BigInt = BigInt('0x' + hash1);
+        const hash2BigInt = BigInt('0x' + hash2);
+        
+        const name_hash1 = res.poseidon([hash1BigInt]);
+        const name_hash2 = res.poseidon([hash2BigInt]);
+        
+        // Računaj roditeljski heš na ispravan način
+        const parent_hash = res.poseidon([hash1BigInt, hash2BigInt]);
+        
+        const sibling_hash = "2098f5fb9e239eab3ceac3f27b81e481dc3124d55ffed523a839ee8446b64864";
+
+        const parent_hash2 = "17a3cbf091cad9c8486fbeb0e5ff29efb38d35affb022075fb2da89d64f80b37";
+
+        const sibling_hashBigInt = BigInt('0x' + sibling_hash)
+
+        const parent_hashBigInt = BigInt('0x' + parent_hash2)
 
 
-    console.log(res.checkDuplicate(name, pidToCheck, pub_x, pub_y));
+        // Računaj root koristeći parent_hash i sibling_hash
+        const calculatedRoot = res.poseidon([
+            parent_hash, sibling_hashBigInt
+        ]);
+
+        console.log("Calculated root is", calculatedRoot.toString(16));
+        console.log("True root is", res.tree.getRoot().toString(16));
+    }
 });
