@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { IncrementalMerkleTree } from 'merkletreejs';
 import * as fs from 'fs';
-const { PublicKey, PrivateKey } = require('babyjubjub');
+import { sha256, sha224 } from 'js-sha256';
 
 
 const { buildPoseidon } = require('circomlibjs');
@@ -34,16 +34,18 @@ class Regulator {
     }
 
     private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
-        // calculating hash of name
-        let name_number: string = "";
-        for (let i = 0; i < name.length; i++) {
-            name_number += name.charCodeAt(i).toString();
-        }
-        const name_hash = this.poseidon([name_number]);
-
-        // calculating user hash
-        return this.poseidon([name_hash, pid, pub_x, pub_y]);
+        // Heširanje imena
+        const name_hash_hex = sha256(name);
+        const name_hash_bigint = BigInt('0x' + name_hash_hex);
+        console.log("Name hash (BigInt):", name_hash_bigint.toString(16));
+    
+        // Generisanje korisničkog heša
+        const userHash = this.poseidon([name_hash_bigint, BigInt(pid), BigInt(pub_x), BigInt(pub_y)]);
+        console.log("User hash:", userHash.toString(16));
+    
+        return userHash;
     }
+    
 
 
     public registerUser(name: string, pid: number, pub_x: number, pub_y: number): void {
@@ -109,8 +111,8 @@ testing().then((res) => {
     
         console.log("------ Testing Merkle Proof -------");
     
-        const hash1 = "3de07b2978ff113f7b853ea9590475e53320dbb731150264142a3f4618e8bd9";
-        const hash2 = "2d93927060ea68025d8cc1bf545522eccd3dc36036b3c4b903b21e4842d527ac";
+        const hash1 = "124d16aca9112afef51af19d8ea640fddc0441f87b9fe7dad3e7739973e7f752";
+        const hash2 = "2e4e6f64b65b4f03813694d121f0af21c10d6be6e07b3dd60d2f54b47b265523";
 
         const hash1BigInt = BigInt('0x' + hash1);
         const hash2BigInt = BigInt('0x' + hash2);
