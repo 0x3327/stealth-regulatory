@@ -1,8 +1,10 @@
 import express, { Express, Request, Response } from 'express';
 import { IncrementalMerkleTree } from 'merkletreejs';
 import * as fs from 'fs';
+import { sha256, sha224 } from 'js-sha256';
 
-const { buildPoseidon } = require('circomlibjs')
+
+const { buildPoseidon } = require('circomlibjs');
 const FILE_NAME = "registered_users";
 
 class Regulator {
@@ -20,45 +22,73 @@ class Regulator {
             depth: 2,
             arity: 2,
             zeroValue: BigInt(0)
-        })
+        });
     }
 
     /*
-    *   Function expects inputs to be decimal numbers, or strings that can
-    *   be converted to a decimal number
+    *   Function expects inputs to be hexadecimal strings
     */
-    public poseidon(inputs: any) {
-        const bigIntInputs = inputs.map(IncrementalMerkleTree.bigNumberify);
+    public poseidon(inputs: any[]): BigInt {
+        const bigIntInputs = inputs.map(input => BigInt('0x' + input));
         const hash = this._poseidon(bigIntInputs);
         const bn = IncrementalMerkleTree.bigNumberify(this._poseidon.F.toString(hash))
         return bn
     }
 
     private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
-        // calculating hash of name
-        let name_number: string = "";
-        for (let i = 0; i < name.length; i++) {
-            name_number += name.charCodeAt(i).toString();
-        }
-        const name_hash = this.poseidon([name_number]);
+        // Heširanje imena
+        const name_hash_hex = sha256(name);
+        const name_hash_bigint = BigInt('0x' + name_hash_hex);
+        console.log("Name hash (BigInt):", name_hash_bigint.toString(16));
+    
+        // Generisanje korisničkog heša
+        const userHash = this.poseidon([name_hash_bigint, BigInt(pid), BigInt(pub_x), BigInt(pub_y)]);
+        console.log("User hash:", userHash.toString(16));
+    
+        return userHash;
+    }
+    
 
-        // calculating user hash
-        return this.poseidon([name_hash, pid, pub_x, pub_y]);
+
+    public registerUser(name: string, pid: number, pub_x: number, pub_y: number): void {
+        const userHash = this.generateUserHash(name, pid, pub_x, pub_y);
+
+        if (this.tree !== undefined) {
+            this.tree.insert(userHash);
+
+            // Write user into file
+            const index = this.tree.indexOf(userHash);
+            fs.appendFileSync(FILE_NAME, `${name} ${pid} ${index}\n`);
+
+            console.log('User hash:', userHash.toString(16)); // Debug output
+            console.log('User inserted at index:', index); // Debug output
+        }
     }
 
-    public registerUser(name: string, pid: number, pub_x: number, pub_y: number) {
-        const user_hash = this.generateUserHash(name, pid, pub_x, pub_y);
-        console.log(`Hash of ${name} is `, user_hash);
-        if (this.tree !== undefined) {
-            this.tree.insert(user_hash);
 
-            // write user into file
-            fs.appendFileSync(FILE_NAME, name + " " + pid + 
-                " " + this.tree.indexOf(user_hash).toString() + '\n');
+    public checkDuplicate(name: string, pid: number, pub_x: number, pub_y: number): any {
+        if (!fs.existsSync(FILE_NAME)) {
+            return "File does not exist";
         }
 
+        const fileData = fs.readFileSync(FILE_NAME, 'utf-8');
+        const lines = fileData.split('\n');
+
+        for (const line of lines) {
+            const data = line.split(' ');
+            if (data.length > 1 && Number(data[1]) === pid) {
+                const newIndex: number = parseInt(data[2], 10);
+                const leaves = this.tree?.getLeaves();
+                const leafAtIndex = leaves?[newIndex]:-1;
+                return leafAtIndex;
+            }
+        }
+
+        this.registerUser(name, pid, pub_x, pub_y);
     }
 }
+
+
 
 async function testing() {
     const regulator: Regulator = new Regulator();
@@ -77,25 +107,4 @@ testing().then((res) => {
 
     IncrementalMerkleTree.print(res.tree);
 
-    if (res.tree !== undefined) {
-        console.log()
-        console.log(res.tree.getProof(0));
-    
-        console.log("------ Testing Merkle Proof -------");
-    
-        const hash1: BigInt = 20614815389456477269622376490749609717305042994180078292278868320083221227436n;
-        const hash2: BigInt = 1749231721186905000331905189205193995387117199992888763390662983390862412761n;
-    
-        const concat_hash: string = hash1.toString() + hash2.toString();
-    
-        const parent_hash = res.poseidon([hash2, hash1]);
-        const sibling_hash: BigInt = 14744269619966411208579211824598458697587494354926760081771325075741142829156n;
-        console.log(parent_hash);
-    
-        console.log("Root is", res.poseidon([
-            parent_hash,
-            sibling_hash
-        ]));
-        console.log("True root is", res.tree.getRoot());
-    }
 });
