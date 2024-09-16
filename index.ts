@@ -32,13 +32,12 @@ class Regulator {
         return bn
     }
 
-    private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
+    public generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
         // Heširanje imena
         const name_hash_hex = sha256(name);
     
         // Generisanje korisničkog heša
         const userHash = this.poseidon(['0x' + name_hash_hex, pid, pub_x, pub_y]);
-        console.log("User hash:", userHash.toString(16));
     
         return userHash;
     }
@@ -136,11 +135,44 @@ class Regulator {
         }
     }
     
-    
-    
+    // function that returns list of hashes and their indexes
+    // needed to generate merkle proof
+    public getMerkleProof(leafIndex: number): any[] {
+        let hashes = [];
+        if (this.tree !== undefined) {
+            const proof = this.tree.getProof(leafIndex);
+            for (let i = 0; i < proof.siblings.length; i++) {
+                hashes.push([proof.siblings[i][0], proof.pathIndices[i]]);
+            }
+        }
+        return hashes;
+    }
 }
 
+function testMerkleProof(regulator: Regulator) {
+    const name = "Nikola";
+    const pid = 1234567891234;
+    const pub_x = 7849177681360672621257726786949079749092629607596162839195961972852243798387;
+    const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291770;
 
+    const proof = regulator.getMerkleProof(0);
+
+    let hash = regulator.generateUserHash(name, pid, pub_x, pub_y);
+    for (let i = 0; i < proof.length; i++) {
+        let second_hash = proof[i][0];
+        let index = proof[i][1];
+
+        if (index == 0) {
+            hash = regulator.poseidon([hash, second_hash]);
+        }
+        else {
+            hash = regulator.poseidon([second_hash, hash]);
+        }
+    }
+
+    if (regulator.tree !== undefined)
+        return console.log(regulator.tree.getRoot() === hash);
+}
 
 async function testing() {
     const regulator: Regulator = new Regulator();
@@ -157,6 +189,7 @@ testing().then((res) => {
     res.registerUser(name, pid, pub_x, pub_y);
     res.registerUser("Pavle", 2345678912345, 8729176218460562548973127896482079481359769801452716493125971962853443910295, 9328416529780431261879424985573099310275416289943765812297619982154127390826);
 
+    /*
     // Save Merkle tree to JSON
     res.saveTreeWithParentsToFile('merkle_tree.json');
 
@@ -165,6 +198,12 @@ testing().then((res) => {
 
     // Print MT
     IncrementalMerkleTree.print(res.tree);
+    */
+
+    if (res.tree !== undefined) {
+        const result = testMerkleProof(res);
+        console.log(result);
+    }
 });
 
 
