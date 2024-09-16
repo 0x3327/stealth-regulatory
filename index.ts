@@ -29,7 +29,6 @@ class Regulator {
     */
     public poseidon(inputs: any) {
         const bigIntInputs = inputs.map(IncrementalMerkleTree.bigNumberify);
-        console.log("Converted input ", bigIntInputs);
         const hash = this._poseidon(bigIntInputs);
         const bn = IncrementalMerkleTree.bigNumberify(this._poseidon.F.toString(hash))
         return bn
@@ -84,13 +83,14 @@ testing().then((res) => {
     
         console.log("------ Testing Merkle Proof -------");
     
-        const hash1: number = 20614815389456477269622376490749609717305042994180078292278868320083221227436;
-        const hash2: number = 1749231721186905000331905189205193995387117199992888763390662983390862412761
+        const hash1: BigInt = 20614815389456477269622376490749609717305042994180078292278868320083221227436n;
+        const hash2: BigInt = 1749231721186905000331905189205193995387117199992888763390662983390862412761n;
     
         const concat_hash: string = hash1.toString() + hash2.toString();
     
         const parent_hash = res.poseidon([hash2, hash1]);
-        const sibling_hash = 14744269619966411208579211824598458697587494354926760081771325075741142829156;
+        const sibling_hash: BigInt = 14744269619966411208579211824598458697587494354926760081771325075741142829156n;
+        console.log(parent_hash);
     
         console.log("Root is", res.poseidon([
             parent_hash,
