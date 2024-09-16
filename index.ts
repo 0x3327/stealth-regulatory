@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { IncrementalMerkleTree } from 'merkletreejs';
 import * as fs from 'fs';
-import { sha256, sha224 } from 'js-sha256';
+import { sha256 } from 'js-sha256';
 
 
 const { buildPoseidon } = require('circomlibjs');
@@ -81,6 +81,63 @@ class Regulator {
 
         this.registerUser(name, pid, pub_x, pub_y);
     }
+
+    public saveTreeWithParentsToFile(filePath: string): void {
+        if (this.tree !== undefined) {
+            const leaves = this.tree.getLeaves().map((leaf) => leaf.toString(16));
+            const root = this.tree.getRoot().toString(16);
+            const parents: string[] = [];
+    
+            // Calculating parents hash
+            for (let i = 0; i < leaves.length; i += 2) {
+                if (i + 1 < leaves.length) {
+                    const leftLeaf = BigInt('0x' + leaves[i]);
+                    const rightLeaf = BigInt('0x' + leaves[i + 1]);
+                    const parentHash = this.poseidon([leftLeaf, rightLeaf]).toString(16);
+                    parents.push(parentHash);
+                }
+            }
+    
+            const treeData = {
+                leaves: leaves,
+                parents: parents,
+                root: root
+            };
+    
+            // Convert to JSON and save
+            fs.writeFileSync(filePath, JSON.stringify(treeData, null, 2));
+            console.log(`Merkle tree with parents saved to ${filePath}`);
+        }
+    }
+    
+
+    public loadTreeWithParentsFromFile(filePath: string): void {
+        if (fs.existsSync(filePath)) {
+            const fileData = fs.readFileSync(filePath, 'utf-8');
+            const treeData = JSON.parse(fileData);
+
+            this.tree = new IncrementalMerkleTree(this.poseidon.bind(this), {
+                depth: 2,
+                arity: 2,
+                zeroValue: BigInt(0)
+            });
+    
+            // Add leaves
+            treeData.leaves.forEach((leaf: string) => {
+                this.tree?.insert(BigInt('0x' + leaf));
+            });
+    
+            // Write parents
+            console.log("Parents:", treeData.parents);
+    
+            console.log(`Merkle tree with parents loaded from ${filePath}`);
+        } else {
+            console.log(`File ${filePath} does not exist.`);
+        }
+    }
+    
+    
+    
 }
 
 
@@ -100,20 +157,14 @@ testing().then((res) => {
     res.registerUser(name, pid, pub_x, pub_y);
     res.registerUser("Pavle", 2345678912345, 8729176218460562548973127896482079481359769801452716493125971962853443910295, 9328416529780431261879424985573099310275416289943765812297619982154127390826);
 
-    IncrementalMerkleTree.print(res.tree);
+    // Save Merkle tree to JSON
+    res.saveTreeWithParentsToFile('merkle_tree.json');
 
-    // if (res.tree !== undefined) {
-    //     console.log("----- Merkle proof test -----");
-    //     console.log(res.tree.getProof(0));
-    // 
-    //     const hash1 = "0x124d16aca9112afef51af19d8ea640fddc0441f87b9fe7dad3e7739973e7f752";
-    //     const hash2 = "0x2e4e6f64b65b4f03813694d121f0af21c10d6be6e07b3dd60d2f54b47b265523";
-    //     const parent_hash = res.poseidon([hash1, hash2]);
-    //     const sibling_hash = "0x2098f5fb9e239eab3ceac3f27b81e481dc3124d55ffed523a839ee8446b64864";
-    //     const root = res.poseidon([parent_hash, sibling_hash]);
-    // 
-    //     console.log("Calculated root is ", root);
-    //     console.log("True root is ", res.tree.getRoot());
-    // }
- 
+    // Read JSON
+    res.loadTreeWithParentsFromFile('merkle_tree.json');
+
+    // Print MT
+    IncrementalMerkleTree.print(res.tree);
 });
+
+
