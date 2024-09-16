@@ -25,11 +25,8 @@ class Regulator {
         });
     }
 
-    /*
-    *   Function expects inputs to be hexadecimal strings
-    */
     public poseidon(inputs: any[]): BigInt {
-        const bigIntInputs = inputs.map(input => BigInt('0x' + input));
+        const bigIntInputs = inputs.map(IncrementalMerkleTree.bigNumberify);
         const hash = this._poseidon(bigIntInputs);
         const bn = IncrementalMerkleTree.bigNumberify(this._poseidon.F.toString(hash))
         return bn
@@ -38,11 +35,9 @@ class Regulator {
     private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
         // Heširanje imena
         const name_hash_hex = sha256(name);
-        const name_hash_bigint = BigInt('0x' + name_hash_hex);
-        console.log("Name hash (BigInt):", name_hash_bigint.toString(16));
     
         // Generisanje korisničkog heša
-        const userHash = this.poseidon([name_hash_bigint, BigInt(pid), BigInt(pub_x), BigInt(pub_y)]);
+        const userHash = this.poseidon(['0x' + name_hash_hex, pid, pub_x, pub_y]);
         console.log("User hash:", userHash.toString(16));
     
         return userHash;
@@ -107,4 +102,18 @@ testing().then((res) => {
 
     IncrementalMerkleTree.print(res.tree);
 
+    // if (res.tree !== undefined) {
+    //     console.log("----- Merkle proof test -----");
+    //     console.log(res.tree.getProof(0));
+    // 
+    //     const hash1 = "0x124d16aca9112afef51af19d8ea640fddc0441f87b9fe7dad3e7739973e7f752";
+    //     const hash2 = "0x2e4e6f64b65b4f03813694d121f0af21c10d6be6e07b3dd60d2f54b47b265523";
+    //     const parent_hash = res.poseidon([hash1, hash2]);
+    //     const sibling_hash = "0x2098f5fb9e239eab3ceac3f27b81e481dc3124d55ffed523a839ee8446b64864";
+    //     const root = res.poseidon([parent_hash, sibling_hash]);
+    // 
+    //     console.log("Calculated root is ", root);
+    //     console.log("True root is ", res.tree.getRoot());
+    // }
+ 
 });
