@@ -34,10 +34,11 @@ class Regulator {
 
     public generateUserHash(name: string, pid: number, pub_x: number, pub_y: number) {
         // Heširanje imena
-        const name_hash_hex = sha256(name);
+        const name_hash_hex = BigInt('0x' + sha256(name));
+        console.log("NAME", name_hash_hex)
     
         // Generisanje korisničkog heša
-        const userHash = this.poseidon(['0x' + name_hash_hex, pid, pub_x, pub_y]);
+        const userHash = this.poseidon([name_hash_hex, pid, pub_x, pub_y]);
     
         return userHash;
     }
@@ -54,7 +55,7 @@ class Regulator {
             const index = this.tree.indexOf(userHash);
             fs.appendFileSync(FILE_NAME, `${name} ${pid} ${index}\n`);
 
-            console.log('User hash:', userHash.toString(16)); // Debug output
+            console.log('User hash:', userHash); // Debug output
             console.log('User inserted at index:', index); // Debug output
         }
     }
@@ -145,6 +146,7 @@ class Regulator {
                 hashes.push([proof.siblings[i][0], proof.pathIndices[i]]);
             }
         }
+        console.log(hashes)
         return hashes;
     }
 }
@@ -152,8 +154,8 @@ class Regulator {
 function testMerkleProof(regulator: Regulator) {
     const name = "Nikola";
     const pid = 1234567891234;
-    const pub_x = 7849177681360672621257726786949079749092629607596162839195961972852243798387;
-    const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291770;
+    const pub_x = 5299619240641551281634865583518297030282874472190772894086521144482721001553;
+    const pub_y = 16950150798460657717958625567821834550301663161624707787222815936182638968203;
 
     const proof = regulator.getMerkleProof(0);
 
@@ -183,13 +185,56 @@ async function testing() {
 testing().then((res) => {
     const name = "Nikola";
     const pid = 1234567891234;
-    const pub_x = 7849177681360672621257726786949079749092629607596162839195961972852243798387;
-    const pub_y = 6476520406570543146511284735472598280851241629796745672331248892171436291770;
+    const pub_x = 3888576901777170289421589198162014583316338054584738763549834494791884717082;
+    const pub_y = 19725565301010062238652593058005193447661094791735349142110963933738384313931;
+
+    //  const p = BigInt(21888242871839275222246405745257275088548364400416034343698204186575808495617);
+    //  const l = BigInt(2736030358979909402780800718157159386076813972158567259200215660948447373041);
+
+    //  14286942789459266288728506834874719885884871879898147527888937849006820603176 
+
+    //  const reducedPublicX = BigInt(pub_x) % p;
+    //  const reducedPublicY = BigInt(pub_y) % p;
+
+    //  const reducedPublicX2 =BigInt(21347281496116813001536291755483085154849108347354186272260828276046640621836) % l;
+    //  const reducedPublicY2 = BigInt(8872397783154522094478226767098399945682972775736833551971462278740617756665) % l;
+
+    //  const reducedPriv = BigInt(53814628616955579277451670290121642763927928917457232858356346073015676178961) % l;
+
+    //  const some = BigInt(19872812680560909620535710920847893968459574804983378854575488785829987466816) % l;
+
+    //  const ujko = BigInt(14744269619966411208579211824598458697587494354926760081771325075741142829156) % l;
+
+
+    //  console.log("Reduced priv:", reducedPriv);
+    //  console.log("burazer:", some);
+    //  console.log("ujko:", ujko);
+
+
+     
+
+
+    //  console.log("Reduced publicX:", reducedPublicX);
+    //  console.log("Reduced publicY:", reducedPublicY);
+
+    //  console.log("Reduced publicX:", reducedPublicX2);
+    //  console.log("Reduced publicY:", reducedPublicY2);
+
+
 
     res.registerUser(name, pid, pub_x, pub_y);
-    res.registerUser("Pavle", 2345678912345, 8729176218460562548973127896482079481359769801452716493125971962853443910295, 9328416529780431261879424985573099310275416289943765812297619982154127390826);
+     res.registerUser(name, pid, Number(5299619240641551281634865583518297030282874472190772894086521144482721001553), 
+     Number(16950150798460657717958625567821834550301663161624707787222815936182638968203));
 
-    /*
+    const name_hash_hex = BigInt('0x' + sha256(name));
+    console.log("NAME", name_hash_hex)
+
+    // console.log(res.poseidon([name_hash_hex,
+    //     pid,
+    //     reducedPublicX,
+    //     reducedPublicY
+    // ]))
+
     // Save Merkle tree to JSON
     res.saveTreeWithParentsToFile('merkle_tree.json');
 
@@ -198,12 +243,21 @@ testing().then((res) => {
 
     // Print MT
     IncrementalMerkleTree.print(res.tree);
-    */
+    
 
     if (res.tree !== undefined) {
         const result = testMerkleProof(res);
         console.log(result);
     }
+
+    const l = BigInt(2736030358979909402780800718157159386076813972158567259200215660948447373041);
+
+    console.log(BigInt(5299619240641551281634865583518297030282874472190772894086521144482721001553) % l)
+    console.log(BigInt(16950150798460657717958625567821834550301663161624707787222815936182638968203) % l)
+
+    console.log(res.poseidon([name_hash_hex, 1234567891234, BigInt(5299619240641551281634865583518297030282874472190772894086521144482721001553) % l,
+        BigInt(16950150798460657717958625567821834550301663161624707787222815936182638968203) % l
+    ]))
 });
 
 
