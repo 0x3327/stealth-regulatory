@@ -46,7 +46,7 @@ class API {
             const { name, pid, pub_x, pub_y } = req.body;
 
             // TODO: check if the tree is full already
-            let index = this.regulator.registerUser(name, pid, pub_x, pub_y);
+            let index = this.regulator.registerUser(name, Number(pid), Number(pub_x), Number(pub_y));
             let proof = this.regulator.getProofForUser(index);
             sendResponseOK(res, "Handling /register-user", proof);
         });

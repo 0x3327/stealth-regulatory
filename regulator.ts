@@ -59,10 +59,7 @@ class Regulator {
         for (const line of lines) {
             const data = line.split(' ');
             if (data.length > 1 && Number(data[1]) === pid) {
-                const newIndex: number = parseInt(data[2], 10);
-                const leaves = this.tree?.getLeaves();
-                const leafAtIndex = leaves ? newIndex : -1;
-                return leafAtIndex;
+                return parseInt(data[2], 10);
             }
         }
         return -1;
