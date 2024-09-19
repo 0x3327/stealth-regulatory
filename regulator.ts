@@ -6,11 +6,11 @@ const { buildPoseidon } = require('circomlibjs');
 
 class Regulator {
     private _poseidon: any;
-    private usersFilePath: string;
+    private registeredUsersFilePath: string;
     public tree!: IncrementalMerkleTree;
 
-    constructor(usersFilePath: string) {
-        this.usersFilePath = usersFilePath;
+    constructor(registeredUsersFilePath: string) {
+        this.registeredUsersFilePath = registeredUsersFilePath;
     }
 
     /**
@@ -47,11 +47,11 @@ class Regulator {
      * @returns {number} - index of the user in the tree if registered, -1 otherwise
      */
     private checkIfRegistered(name: string, pid: number, pub_x: number, pub_y: number): number {
-        if (!fs.existsSync(this.usersFilePath)) {
+        if (!fs.existsSync(this.registeredUsersFilePath)) {
             return -1;
         }
 
-        const fileData = fs.readFileSync(this.usersFilePath, 'utf-8');
+        const fileData = fs.readFileSync(this.registeredUsersFilePath, 'utf-8');
         const lines = fileData.split('\n');
 
         for (const line of lines) {
@@ -94,7 +94,7 @@ class Regulator {
 
         // Write user into file
         index = this.tree.indexOf(userHash);
-        fs.appendFileSync(this.usersFilePath, `${name} ${pid} ${index}\n`);
+        fs.appendFileSync(this.registeredUsersFilePath, `${name} ${pid} ${index}\n`);
 
         console.log('User hash:', userHash.toString(16)); // Debug output
         console.log('User inserted at index:', index); // Debug output
