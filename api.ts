@@ -26,10 +26,10 @@ class API {
     private server: Express;
     private regulator: Regulator;
 
-    constructor(host: string, port: number, registeredUsersFilePath: string) {
+    constructor(host: string, port: number, registeredUsersFilePath: string, merkleTreeFilePath: string) {
         this.host = host;
         this.port = port;
-        this.regulator = new Regulator(registeredUsersFilePath);
+        this.regulator = new Regulator(registeredUsersFilePath, merkleTreeFilePath);
 
         this.server = express();
         this.server.use(bodyParser.json());
@@ -47,6 +47,9 @@ class API {
 
             // TODO: check if the tree is full already
             let index = this.regulator.registerUser(name, Number(pid), Number(pub_x), Number(pub_y));
+
+            this.regulator.saveTreeToFile();
+
             let proof = this.regulator.getProofForUser(index);
             sendResponseOK(res, "Handling /register-user", proof);
         });
@@ -59,7 +62,7 @@ class API {
 
     public async start() {
         await this.regulator.init();
-        this.regulator.loadTreeFromFile("merkle_tree.json");
+        this.regulator.loadTreeFromFile();
         this.server.listen(this.port, this.host, () => {
             console.log(`Started listening on ${this.host}:${this.port}`);
         }) 

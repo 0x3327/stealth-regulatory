@@ -7,12 +7,13 @@ const { buildPoseidon } = require('circomlibjs');
 class Regulator {
     private _poseidon: any;
     private registeredUsersFilePath: string;
+    private merkleTreeFilePath: string;
     public tree!: IncrementalMerkleTree;
 
-    // TODO: make name of the file where tree is stored a property
 
-    constructor(registeredUsersFilePath: string) {
+    constructor(registeredUsersFilePath: string, merkleTreeFilePath: string) {
         this.registeredUsersFilePath = registeredUsersFilePath;
+        this.merkleTreeFilePath = merkleTreeFilePath;
     }
 
     /**
@@ -121,9 +122,9 @@ class Regulator {
 
     /**
      * Saves merkle tree into the given file 
-     * @param {string} treeFilePath
+     * TODO: update function to work with trees of arbitrary depth
      */
-    public saveTreeToFile(treeFilePath: string): void {
+    public saveTreeToFile(): void {
         if (this.tree !== undefined) {
             const leaves = this.tree.getLeaves().map((leaf) => leaf.toString(16));
             const root = this.tree.getRoot().toString(16);
@@ -146,18 +147,18 @@ class Regulator {
             };
     
             // Convert to JSON and save
-            fs.writeFileSync(treeFilePath, JSON.stringify(treeData, null, 2));
-            console.log(`Merkle tree with parents saved to ${treeFilePath}`);
+            fs.writeFileSync(this.merkleTreeFilePath, JSON.stringify(treeData, null, 2));
+            console.log(`Merkle tree with parents saved to ${this.merkleTreeFilePath}`);
         }
     }
 
     /**
      * Constructs merkle tree from the given file 
-     * @param {string} treeFilePath
+     * TODO: update function to work with trees of arbitrary depth
      */
-    public loadTreeFromFile(treeFilePath: string): void {
-        if (fs.existsSync(treeFilePath)) {
-            const fileData = fs.readFileSync(treeFilePath, 'utf-8');
+    public loadTreeFromFile(): void {
+        if (fs.existsSync(this.merkleTreeFilePath)) {
+            const fileData = fs.readFileSync(this.merkleTreeFilePath, 'utf-8');
             const treeData = JSON.parse(fileData);
 
             this.tree = new IncrementalMerkleTree(this.poseidon.bind(this), {
@@ -174,9 +175,9 @@ class Regulator {
             // Write parents
             console.log("Parents:", treeData.parents);
     
-            console.log(`Merkle tree with parents loaded from ${treeFilePath}`);
+            console.log(`Merkle tree with parents loaded from ${this.merkleTreeFilePath}`);
         } else {
-            console.log(`File ${treeFilePath} does not exist.`);
+            console.log(`File ${this.merkleTreeFilePath} does not exist.`);
         }
     }
 }

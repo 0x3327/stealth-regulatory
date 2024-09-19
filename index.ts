@@ -6,7 +6,8 @@ import API from "./api";
 
 async function testing() {
     const usersFile: string = "registered_users";
-    const regulatorAPI: API = new API("localhost", 5555, usersFile);
+    const merkleTreeFile: string = "merkle_tree.json";
+    const regulatorAPI: API = new API("localhost", 5555, usersFile, merkleTreeFile);
     await regulatorAPI.start();
     return regulatorAPI;
 }
