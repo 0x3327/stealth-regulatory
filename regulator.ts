@@ -9,6 +9,8 @@ class Regulator {
     private registeredUsersFilePath: string;
     public tree!: IncrementalMerkleTree;
 
+    // TODO: make name of the file where tree is stored a property
+
     constructor(registeredUsersFilePath: string) {
         this.registeredUsersFilePath = registeredUsersFilePath;
     }
@@ -96,8 +98,8 @@ class Regulator {
         index = this.tree.indexOf(userHash);
         fs.appendFileSync(this.registeredUsersFilePath, `${name} ${pid} ${index}\n`);
 
-        console.log('User hash:', userHash.toString(16)); // Debug output
-        console.log('User inserted at index:', index); // Debug output
+        // console.log('User hash:', userHash.toString(16)); // Debug output
+        // console.log('User inserted at index:', index); // Debug output
 
         return index;
     }
@@ -114,7 +116,7 @@ class Regulator {
         if (this.tree !== undefined) {
             const proof = this.tree.getProof(leafIndex);
             for (let i = 0; i < proof.siblings.length; i++) {
-                hashes.push([proof.siblings[i][0], proof.pathIndices[i]]);
+                hashes.push([proof.siblings[i][0].toString(), proof.pathIndices[i]]);
             }
         }
         return hashes;
