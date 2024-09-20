@@ -34,11 +34,11 @@ class Regulator {
      * 
      * @param {string} name - name of the user
      * @param {number} pid - user's personal identification number (PID)
-     * @param {number} pub_x - x coordinate of user's public key
-     * @param {number} pub_y - y coordinate of user's public key
+     * @param {BigInt} pub_x - x coordinate of user's public key
+     * @param {BigInt} pub_y - y coordinate of user's public key
      * @returns {BigInt} - hash of the user
      */
-    private generateUserHash(name: string, pid: number, pub_x: number, pub_y: number): BigInt {
+    private generateUserHash(name: string, pid: number, pub_x: BigInt, pub_y: BigInt): BigInt {
         const name_hash_hex = sha256(name);
         const userHash = this.poseidon(['0x' + name_hash_hex, pid, pub_x, pub_y]);
         return userHash;
@@ -49,7 +49,7 @@ class Regulator {
      * 
      * @returns {number} - index of the user in the tree if registered, -1 otherwise
      */
-    private checkIfRegistered(name: string, pid: number, pub_x: number, pub_y: number): number {
+    private checkIfRegistered(name: string, pid: number, pub_x: BigInt, pub_y: BigInt): number {
         if (!fs.existsSync(this.registeredUsersFilePath)) {
             return -1;
         }
@@ -82,7 +82,7 @@ class Regulator {
      * Registers the user
      * @returns {number} - index of the user in the tree
      */
-    public registerUser(name: string, pid: number, pub_x: number, pub_y: number): number {
+    public registerUser(name: string, pid: number, pub_x: BigInt, pub_y: BigInt): number {
 
         // user is already registered
         let index = this.checkIfRegistered(name, pid, pub_x, pub_y);
