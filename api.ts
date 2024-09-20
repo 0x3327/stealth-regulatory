@@ -46,7 +46,7 @@ class API {
             const { name, pid, pub_x, pub_y } = req.body;
 
             // TODO: check if the tree is full already
-            let index = this.regulator.registerUser(name, Number(pid), Number(pub_x), Number(pub_y));
+            let index = this.regulator.registerUser(name, Number(pid), BigInt(pub_x), BigInt(pub_y));
 
             this.regulator.saveTreeToFile();
 
