@@ -50,8 +50,10 @@ class API {
 
             this.regulator.saveTreeToFile();
 
-            let proof = this.regulator.getProofForUser(index);
-            sendResponseOK(res, "Handling /register-user", proof);
+            let responseData = this.regulator.getProofForUser(index);
+            responseData.push([this.regulator.tree.getRoot().toString()]);
+            // TODO: also add signed merkle root as response
+            sendResponseOK(res, "Handling /register-user", responseData);
         });
 
         // handling unspecified routes
